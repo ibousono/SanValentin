@@ -64,12 +64,20 @@
         
         .botones {
             display: flex;
-            justify-content: center;
-            gap: 20px;
+            justify-content: space-between;
+            align-items: center;
             margin-top: 30px;
             position: relative;
-            min-height: 100px;
+            min-height: 80px;
             width: 100%;
+            gap: 20px;
+        }
+        
+        .botones-inicial {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 20px;
         }
         
         .btn-si {
@@ -84,9 +92,10 @@
             font-weight: bold;
             box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
             min-width: 150px;
-            z-index: 2;
-            position: relative;
+            width: 48%;
+            flex: 1;
             transform-origin: center;
+            z-index: 2;
         }
         
         .btn-si:hover {
@@ -103,19 +112,23 @@
             border-radius: 50px;
             cursor: pointer;
             font-weight: bold;
-            position: absolute;
+            position: relative;
             transition: all 0.3s;
             box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
             min-width: 150px;
-            z-index: 100;
+            width: 48%;
+            flex: 1;
             transform-origin: center;
-            /* Posición inicial al lado del botón Sí */
-            left: calc(50% + 85px);
-            top: 0;
+            z-index: 3;
         }
         
-        .btn-no:hover {
-            transform: rotate(5deg) scale(1.05);
+        .btn-no:hover:not(.escapando) {
+            transform: scale(1.05) rotate(5deg);
+        }
+        
+        .btn-no.escapando {
+            position: fixed !important;
+            z-index: 1000 !important;
         }
         
         .hearts-container {
@@ -329,11 +342,12 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
         
-        .no-original-position {
-            position: absolute;
-            left: calc(50% + 85px);
-            top: 0;
-            transition: all 0.5s ease-in-out;
+        .no-posicion-inicial {
+            position: relative !important;
+            left: auto !important;
+            top: auto !important;
+            transform: scale(1) rotate(0deg) !important;
+            transition: all 0.5s ease !important;
         }
     </style>
 </head>
@@ -347,10 +361,12 @@
         <p>¿Aceptarías ser mi San Valentín este año y todos los que vengan?</p>
         
         <div class="botones" id="botonesContainer">
-            <button class="btn-si" onclick="aceptar()" id="btnSi">
-                <span class="si-emoticons" id="siEmoticons">¡SÍ! 💖</span>
-            </button>
-            <button class="btn-no" id="btnNo">No 😢</button>
+            <div class="botones-inicial">
+                <button class="btn-si" onclick="aceptar()" id="btnSi">
+                    <span class="si-emoticons" id="siEmoticons">¡SÍ! 💖</span>
+                </button>
+                <button class="btn-no" id="btnNo">No 😢</button>
+            </div>
         </div>
         
         <div class="message" id="message">
@@ -375,7 +391,7 @@
         let siSize = 1;
         let angryFaceVisible = false;
         let noIsEscaping = false;
-        let noOriginalPosition = { left: 0, top: 0 };
+        let noOriginalPosition = null;
         const emoticons = ["💖", "💕", "💘", "💝", "💗", "💓", "💞"];
         let currentEmoticonIndex = 0;
         const roseMessages = [
@@ -392,37 +408,42 @@
         // Guardar la posición original del botón No
         function saveOriginalPosition() {
             const btnNo = document.getElementById('btnNo');
-            const container = document.querySelector('.container');
-            const containerRect = container.getBoundingClientRect();
+            const rect = btnNo.getBoundingClientRect();
             
-            // Calcular posición relativa al contenedor
             noOriginalPosition = {
-                left: containerRect.left + (containerRect.width / 2) + 85,
-                top: containerRect.top + btnNo.offsetTop
+                left: rect.left,
+                top: rect.top,
+                width: rect.width,
+                height: rect.height
             };
-            
-            console.log("Posición original guardada:", noOriginalPosition);
         }
         
         // Regresar el botón No a su posición original
         function returnToOriginalPosition() {
             const btnNo = document.getElementById('btnNo');
+            const botonesInicial = document.querySelector('.botones-inicial');
             
-            btnNo.classList.add('no-original-position');
-            btnNo.style.position = 'absolute';
+            // Remover clase de escape
+            btnNo.classList.remove('escapando');
+            btnNo.classList.add('no-posicion-inicial');
             
-            // Forzar el regreso a la posición original
-            setTimeout(() => {
-                const container = document.querySelector('.container');
-                const containerRect = container.getBoundingClientRect();
+            // Volver al contenedor original
+            if (!botonesInicial.contains(btnNo)) {
+                const btnSi = document.getElementById('btnSi');
+                botonesInicial.appendChild(btnNo);
                 
-                // Posicionar relativo al contenedor
-                btnNo.style.left = 'calc(50% + 85px)';
-                btnNo.style.top = '0';
-                btnNo.style.transform = 'scale(1) rotate(0deg)';
-                
-                noIsEscaping = false;
-            }, 10);
+                // Restaurar estilos
+                setTimeout(() => {
+                    btnNo.style.position = 'relative';
+                    btnNo.style.left = 'auto';
+                    btnNo.style.top = 'auto';
+                    btnNo.style.width = '48%';
+                    btnNo.style.transform = 'scale(1) rotate(0deg)';
+                    btnNo.style.zIndex = '3';
+                }, 10);
+            }
+            
+            noIsEscaping = false;
         }
         
         // Crear corazones, rosas y decoraciones
@@ -580,15 +601,20 @@
             const giantSi = document.getElementById('giantSi');
             const growthCounter = document.getElementById('growthCounter');
             
+            // Solo iniciar escape si no está escapando ya
+            if (!noIsEscaping) {
+                noIsEscaping = true;
+                btnNo.classList.add('escapando');
+                
+                // Remover del contenedor inicial
+                const botonesInicial = document.querySelector('.botones-inicial');
+                if (botonesInicial.contains(btnNo)) {
+                    document.body.appendChild(btnNo);
+                }
+            }
+            
             // Incrementar contador
             hoverCount++;
-            
-            // Marcar que el botón está escapando
-            noIsEscaping = true;
-            
-            // Cambiar a posición fixed para moverse por toda la pantalla
-            btnNo.style.position = 'fixed';
-            btnNo.classList.remove('no-original-position');
             
             // Hacer crecer el botón Sí INDEFINIDAMENTE (0.1x por cada vez)
             siSize += 0.1;
@@ -624,23 +650,19 @@
             
             // Límites: no puede ir muy abajo (máximo 85% de la altura)
             const maxTop = viewportHeight * 0.85 - btnNoHeight;
-            const minTop = 10; // Mínimo 10px desde arriba
+            const minTop = 10;
             
             // Calcular nueva posición aleatoria
-            let newTop, newLeft;
-            
-            // Intentar encontrar una posición que no esté muy cerca del botón Sí
-            let attempts = 0;
-            do {
-                newTop = Math.max(minTop, Math.min(maxTop, Math.random() * maxTop));
-                newLeft = Math.max(10, Math.min(viewportWidth - btnNoWidth - 10, Math.random() * (viewportWidth - btnNoWidth)));
-                attempts++;
-            } while (attempts < 10); // Máximo 10 intentos
+            const newTop = Math.max(minTop, Math.min(maxTop, Math.random() * maxTop));
+            const newLeft = Math.max(10, Math.min(viewportWidth - btnNoWidth - 10, Math.random() * (viewportWidth - btnNoWidth)));
             
             // Aplicar nueva posición
+            btnNo.style.position = 'fixed';
             btnNo.style.left = newLeft + 'px';
             btnNo.style.top = newTop + 'px';
+            btnNo.style.width = 'auto';
             btnNo.style.transform = `scale(${noScale}) rotate(${Math.random() * 20 - 10}deg)`;
+            btnNo.style.zIndex = '1000';
             
             // Crear efecto de partículas al huir
             if (event && event.clientX && event.clientY) {
@@ -666,7 +688,7 @@
                 angryFaceVisible = true;
             }
             
-            // Regresar a posición original después de 2 segundos de inactividad
+            // Cancelar regreso anterior y programar nuevo
             clearTimeout(window.returnTimeout);
             window.returnTimeout = setTimeout(returnToOriginalPosition, 2000);
         }
@@ -693,22 +715,10 @@
             // Cancelar el regreso automático
             clearTimeout(window.returnTimeout);
             
-            // Mensaje divertido basado en el contador
-            let message = "";
-            if (hoverCount < 5) {
-                message = "¡Oh no! El botón 'No' es tímido 😉";
-            } else if (hoverCount < 15) {
-                message = "¡El botón 'Sí' está creciendo! 🌱";
-            } else if (hoverCount < 20) {
-                message = "¡Cuidado! El botón 'Sí' se está enojando 😠";
-            } else {
-                message = "¡ALERTA! El botón 'Sí' está FURIOSO 🤬";
-            }
-            
             // Mostrar alerta después de un breve retraso
             setTimeout(() => {
-                if (hoverCount < 30) { // Solo mostrar alertas hasta 30 veces
-                    alert(message + `\n\nTamaño actual: ${siSize.toFixed(2)}x`);
+                if (hoverCount < 30) {
+                    alert(`¡Ups! El botón 'No' es muy tímido 😉\n\nTamaño actual del SÍ: ${siSize.toFixed(2)}x`);
                 }
             }, 100);
             
@@ -799,13 +809,8 @@
             
             // Redimensionar y regresar a posición original cuando cambie el tamaño de la ventana
             window.addEventListener('resize', function() {
-                if (!noIsEscaping) {
-                    returnToOriginalPosition();
-                }
-                
-                // Asegurar que el botón no se salga de la pantalla si está escapando
-                const btnNo = document.getElementById('btnNo');
                 if (noIsEscaping) {
+                    const btnNo = document.getElementById('btnNo');
                     const currentLeft = parseInt(btnNo.style.left) || 0;
                     const currentTop = parseInt(btnNo.style.top) || 0;
                     
@@ -818,6 +823,8 @@
                     if (currentTop > maxTop) {
                         btnNo.style.top = Math.max(10, maxTop) + 'px';
                     }
+                } else {
+                    returnToOriginalPosition();
                 }
             });
             
@@ -827,6 +834,17 @@
                     setTimeout(returnToOriginalPosition, 1000);
                 }
             });
+            
+            // Asegurar que los botones sean del mismo tamaño al inicio
+            setTimeout(() => {
+                const btnSi = document.getElementById('btnSi');
+                const btnNo = document.getElementById('btnNo');
+                
+                // Forzar mismo tamaño
+                const maxWidth = Math.max(btnSi.offsetWidth, btnNo.offsetWidth);
+                btnSi.style.width = maxWidth + 'px';
+                btnNo.style.width = maxWidth + 'px';
+            }, 100);
         };
     </script>
 </body>

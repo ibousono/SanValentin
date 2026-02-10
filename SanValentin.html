@@ -30,10 +30,12 @@
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             max-width: 500px;
+            min-width: 450px;
             z-index: 10;
             position: relative;
             border: 3px solid #ff4081;
             transition: transform 0.3s;
+            margin: 20px;
         }
         
         .container:hover {
@@ -66,7 +68,8 @@
             gap: 20px;
             margin-top: 30px;
             position: relative;
-            min-height: 80px;
+            min-height: 100px;
+            width: 100%;
         }
         
         .btn-si {
@@ -81,6 +84,8 @@
             font-weight: bold;
             box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
             min-width: 150px;
+            z-index: 2;
+            position: relative;
         }
         
         .btn-si:hover {
@@ -101,13 +106,7 @@
             transition: all 0.3s;
             box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
             min-width: 150px;
-            animation: noButtonEscape 0.3s forwards;
-        }
-        
-        @keyframes noButtonEscape {
-            0% { transform: scale(1); }
-            50% { transform: scale(0.95); }
-            100% { transform: scale(1); }
+            z-index: 3;
         }
         
         .btn-no:hover {
@@ -126,8 +125,6 @@
         
         .heart, .rose, .sparkle {
             position: absolute;
-            pointer-events: auto;
-            cursor: pointer;
             user-select: none;
             transition: transform 0.3s;
         }
@@ -137,6 +134,7 @@
             font-size: 24px;
             opacity: 0.7;
             animation: float 5s infinite linear;
+            pointer-events: none;
         }
         
         .rose {
@@ -145,12 +143,20 @@
             z-index: 1;
             animation: floatRose 7s infinite linear;
             filter: drop-shadow(0 0 5px rgba(255, 23, 68, 0.3));
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        
+        .rose:hover {
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 10px rgba(255, 23, 68, 0.6));
         }
         
         .sparkle {
             font-size: 20px;
             opacity: 0;
             animation: sparkle 1s forwards;
+            pointer-events: none;
         }
         
         .secret-message {
@@ -270,6 +276,33 @@
             display: inline-block;
             transition: all 0.3s;
         }
+        
+        .angry-face {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2em;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 5;
+        }
+        
+        .rose-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            text-align: center;
+            max-width: 300px;
+            animation: fadeIn 0.5s;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -281,7 +314,8 @@
         <p>El Día de San Valentín se acerca y hay una pregunta muy importante que hacerte...</p>
         <p>¿Aceptarías ser mi San Valentín este año y todos los que vengan?</p>
         
-        <div class="botones">
+        <div class="botones" id="botonesContainer">
+            <div class="angry-face" id="angryFace"></div>
             <button class="btn-si" onclick="aceptar()" id="btnSi">
                 <span class="si-emoticons" id="siEmoticons">¡SÍ! 💖</span>
             </button>
@@ -294,21 +328,38 @@
             <p>Te amo más de lo que las palabras pueden expresar. 💕</p>
         </div>
     </div>
+    
+    <div class="rose-message" id="roseMessage">
+        <h3>💌 Mensaje secreto 💌</h3>
+        <p id="roseMessageText"></p>
+        <button onclick="closeRoseMessage()" style="margin-top: 15px; padding: 8px 20px; background: #ff4081; color: white; border: none; border-radius: 20px; cursor: pointer;">Cerrar</button>
+    </div>
 
     <script>
         let hoverCount = 0;
         let siSize = 1;
+        let angryFaceVisible = false;
         const emoticons = ["💖", "💕", "💘", "💝", "💗", "💓", "💞"];
         let currentEmoticonIndex = 0;
+        const roseMessages = [
+            "Cada rosa representa un día que he pensado en ti 🌹",
+            "Eres la flor más bella de mi vida 💐",
+            "Mi amor por ti florece cada día más 🌷",
+            "Como esta rosa, mi amor por ti nunca se marchita 🌺",
+            "Eres el jardín donde florece mi felicidad 🌸",
+            "Cada pétalo guarda un 'te amo' para ti 💘",
+            "Eres mi rosa favorita en el jardín de la vida 🥀",
+            "Ninguna rosa es tan hermosa como tu sonrisa 💕"
+        ];
         
         // Crear corazones, rosas y decoraciones
         function crearDecoraciones() {
             const heartsContainer = document.getElementById('hearts');
             const backgroundEffect = document.getElementById('backgroundEffect');
-            const total = 50;
+            const total = 40;
             
             // Crear texto de amor en el fondo
-            for (let i = 0; i < 15; i++) {
+            for (let i = 0; i < 10; i++) {
                 const loveText = document.createElement('div');
                 loveText.className = 'love-text';
                 loveText.innerHTML = 'TE AMO';
@@ -327,77 +378,73 @@
                 heart.style.left = Math.random() * 100 + 'vw';
                 heart.style.animationDelay = Math.random() * 5 + 's';
                 heart.style.fontSize = (Math.random() * 20 + 15) + 'px';
-                heart.dataset.type = 'heart';
-                heart.addEventListener('click', () => interactWithElement(heart, 'heart'));
                 heartsContainer.appendChild(heart);
                 
                 // Crear rosas interactivas
-                if (i % 4 === 0) {
+                if (i % 3 === 0) {
                     const rose = document.createElement('div');
                     rose.className = 'rose';
                     rose.innerHTML = '🌹';
                     rose.style.left = Math.random() * 100 + 'vw';
                     rose.style.animationDelay = Math.random() * 7 + 's';
-                    rose.style.fontSize = (Math.random() * 20 + 30) + 'px';
-                    rose.dataset.type = 'rose';
-                    rose.addEventListener('click', () => interactWithElement(rose, 'rose'));
+                    rose.style.fontSize = (Math.random() * 20 + 35) + 'px';
+                    
+                    // Hacer las rosas clickeables
+                    rose.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        showRoseMessage(this);
+                    });
+                    
+                    rose.addEventListener('touchstart', function(e) {
+                        e.stopPropagation();
+                        showRoseMessage(this);
+                    }, { passive: false });
+                    
                     heartsContainer.appendChild(rose);
                 }
             }
         }
         
-        // Interactuar con elementos del fondo
-        function interactWithElement(element, type) {
-            if (type === 'rose') {
-                // Crear chispas alrededor de la rosa
-                createSparkles(element);
-                
-                // Mensaje secreto que aparece cerca de la rosa
-                showSecretMessage(element);
-                
-                // Cambiar el cursor a rosa por un momento
-                document.body.style.cursor = 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 32 32\'><text x=\'8\' y=\'24\' font-size=\'24\' fill=\'red\'>🌹</text></svg>") 16 16, auto';
-                
-                setTimeout(() => {
-                    document.body.style.cursor = 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 32 32\'><text x=\'8\' y=\'24\' font-size=\'24\' fill=\'red\'>💖</text></svg>") 16 16, auto';
-                }, 1000);
-            } else if (type === 'heart') {
-                // El corazón crece y se hace más brillante
-                element.style.transform = 'scale(2)';
-                element.style.opacity = '1';
-                element.style.filter = 'brightness(1.5) drop-shadow(0 0 10px pink)';
-                
-                setTimeout(() => {
-                    element.style.transform = '';
-                    element.style.opacity = '0.7';
-                    element.style.filter = '';
-                }, 500);
-            }
+        // Mostrar mensaje al hacer clic en una rosa
+        function showRoseMessage(roseElement) {
+            const messageIndex = Math.floor(Math.random() * roseMessages.length);
+            const roseMessage = document.getElementById('roseMessage');
+            const roseMessageText = document.getElementById('roseMessageText');
             
-            // Crear fuegos artificiales en la posición del clic
-            createFirework(event.clientX, event.clientY);
+            roseMessageText.textContent = roseMessages[messageIndex];
+            roseMessage.style.display = 'block';
+            
+            // Crear efecto de partículas
+            const rect = roseElement.getBoundingClientRect();
+            createSparkleEffect(rect.left + rect.width/2, rect.top + rect.height/2);
+            
+            // Hacer que la rosa brille
+            roseElement.style.filter = 'drop-shadow(0 0 15px rgba(255, 23, 68, 0.8)) brightness(1.5)';
+            setTimeout(() => {
+                roseElement.style.filter = 'drop-shadow(0 0 5px rgba(255, 23, 68, 0.3))';
+            }, 1000);
         }
         
-        // Crear chispas alrededor de un elemento
-        function createSparkles(element) {
-            const rect = element.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            
-            for (let i = 0; i < 12; i++) {
+        function closeRoseMessage() {
+            document.getElementById('roseMessage').style.display = 'none';
+        }
+        
+        // Efecto de chispas
+        function createSparkleEffect(x, y) {
+            for (let i = 0; i < 8; i++) {
                 const sparkle = document.createElement('div');
                 sparkle.className = 'sparkle';
                 sparkle.innerHTML = '✨';
-                sparkle.style.left = (centerX - 10) + 'px';
-                sparkle.style.top = (centerY - 10) + 'px';
-                sparkle.style.animationDelay = (i * 0.1) + 's';
+                sparkle.style.left = x + 'px';
+                sparkle.style.top = y + 'px';
+                sparkle.style.fontSize = '25px';
                 
                 document.body.appendChild(sparkle);
                 
-                // Animar chispas en diferentes direcciones
+                // Animar en diferentes direcciones
                 setTimeout(() => {
-                    const angle = (i * 30) * Math.PI / 180;
-                    const distance = 50;
+                    const angle = (i * 45) * Math.PI / 180;
+                    const distance = 60;
                     sparkle.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px)`;
                 }, 10);
                 
@@ -408,41 +455,11 @@
             }
         }
         
-        // Mostrar mensaje secreto al tocar una rosa
-        function showSecretMessage(element) {
-            const messages = [
-                "Cada rosa es un pensamiento de ti 💕",
-                "Eres más hermosa que cualquier flor 🌹",
-                "Mi amor por ti crece cada día 🌷",
-                "Eres la flor más bonita de mi jardín 🌺",
-                "Contigo cada día es primavera 🌸",
-                "Te amo más que a todas las rosas del mundo 💘",
-                "Eres mi rosa más preciada 🥀",
-                "Cada pétalo representa un motivo por el que te amo 🌼"
-            ];
-            
-            const message = document.createElement('div');
-            message.className = 'secret-message';
-            message.innerHTML = `<p>${messages[Math.floor(Math.random() * messages.length)]}</p>`;
-            
-            const rect = element.getBoundingClientRect();
-            message.style.left = (rect.left + rect.width + 10) + 'px';
-            message.style.top = (rect.top) + 'px';
-            
-            document.body.appendChild(message);
-            
-            // Remover el mensaje después de 3 segundos
-            setTimeout(() => {
-                message.style.animation = 'fadeIn 0.5s reverse';
-                setTimeout(() => message.remove(), 500);
-            }, 3000);
-        }
-        
         // Crear fuegos artificiales
         function createFirework(x, y) {
             const colors = ['#ff4081', '#ff1744', '#f50057', '#c51162', '#ff80ab'];
             
-            for (let i = 0; i < 30; i++) {
+            for (let i = 0; i < 20; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'firework';
                 particle.style.left = x + 'px';
@@ -453,7 +470,7 @@
                 
                 // Animar partícula
                 const angle = Math.random() * Math.PI * 2;
-                const speed = 2 + Math.random() * 3;
+                const speed = 1.5 + Math.random() * 2;
                 const vx = Math.cos(angle) * speed;
                 const vy = Math.sin(angle) * speed;
                 const size = 2 + Math.random() * 3;
@@ -466,7 +483,7 @@
                     posY += vy;
                     particle.style.left = posX + 'px';
                     particle.style.top = posY + 'px';
-                    particle.style.opacity = parseFloat(particle.style.opacity || 1) - 0.02;
+                    particle.style.opacity = parseFloat(particle.style.opacity || 1) - 0.03;
                     
                     if (parseFloat(particle.style.opacity) > 0) {
                         requestAnimationFrame(animate);
@@ -481,66 +498,86 @@
             }
         }
         
-        // Función para cuando pasa el mouse sobre "No"
+        // Función para cuando pasa el mouse sobre "No" - CORREGIDA
         function huir(event) {
             const btnNo = document.getElementById('btnNo');
-            const container = document.querySelector('.container');
+            const botonesContainer = document.getElementById('botonesContainer');
             const btnSi = document.getElementById('btnSi');
             const siEmoticons = document.getElementById('siEmoticons');
+            const angryFace = document.getElementById('angryFace');
             
-            // Incrementar contador internamente (sin mostrarlo)
+            // Incrementar contador
             hoverCount++;
             
             // Después de 5 veces, hacer crecer el botón Sí y cambiar emoticones
             if (hoverCount >= 5) {
-                // Hacer crecer el botón Sí
-                siSize += 0.15;
+                // Hacer crecer el botón Sí (hasta máximo 2x)
+                siSize = Math.min(2, 1 + (hoverCount - 4) * 0.08);
                 btnSi.style.transform = `scale(${siSize})`;
                 
-                // Cambiar emoticón del botón Sí
-                currentEmoticonIndex = (currentEmoticonIndex + 1) % emoticons.length;
-                siEmoticons.innerHTML = `¡SÍ! ${emoticons[currentEmoticonIndex]}`;
+                // Cambiar emoticón del botón Sí cada 2 veces
+                if (hoverCount % 2 === 0) {
+                    currentEmoticonIndex = (currentEmoticonIndex + 1) % emoticons.length;
+                    siEmoticons.innerHTML = `¡SÍ! ${emoticons[currentEmoticonIndex]}`;
+                }
                 
                 // Efecto especial en el botón Sí
-                btnSi.style.boxShadow = `0 0 30px rgba(76, 175, 80, 0.7)`;
+                btnSi.style.boxShadow = `0 0 ${10 + hoverCount}px rgba(76, 175, 80, 0.7)`;
                 
-                // Hacer que el botón No sea más pequeño
-                btnNo.style.transform = `scale(${Math.max(0.5, 1 - hoverCount * 0.1)})`;
+                // Hacer que el botón No sea más pequeño (mínimo 0.4x)
+                const noScale = Math.max(0.4, 1 - (hoverCount - 4) * 0.05);
+                btnNo.style.transform = `scale(${noScale}) rotate(${Math.random() * 20 - 10}deg)`;
             }
             
-            // Asegurarnos de que el botón No esté dentro de los límites
-            const containerRect = container.getBoundingClientRect();
+            // Mostrar cara enojada después de 15 veces
+            if (hoverCount >= 15 && hoverCount < 20) {
+                angryFace.textContent = "😠";
+                angryFace.style.opacity = "1";
+                angryFace.style.color = "#ff9800";
+                angryFaceVisible = true;
+            }
+            
+            // Mostrar cara enojada roja después de 20 veces
+            if (hoverCount >= 20) {
+                angryFace.textContent = "🤬";
+                angryFace.style.opacity = "1";
+                angryFace.style.color = "#f44336";
+                angryFace.style.textShadow = "0 0 10px red";
+                angryFaceVisible = true;
+            }
+            
+            // Obtener dimensiones del contenedor de botones
+            const containerRect = botonesContainer.getBoundingClientRect();
             const btnNoRect = btnNo.getBoundingClientRect();
             
-            // Posiciones límite
-            const minLeft = 0;
-            const maxLeft = containerRect.width - btnNoRect.width;
-            const minTop = 0;
-            const maxTop = containerRect.height - btnNoRect.height;
+            // Área restringida donde puede moverse el botón No (80% del contenedor)
+            const safeAreaPadding = 20;
+            const minX = safeAreaPadding;
+            const maxX = containerRect.width - btnNoRect.width - safeAreaPadding;
+            const minY = safeAreaPadding;
+            const maxY = containerRect.height - btnNoRect.height - safeAreaPadding;
             
-            // Obtener posición actual
-            let currentLeft = parseInt(btnNo.style.left) || 0;
-            let currentTop = parseInt(btnNo.style.top) || 0;
+            // Calcular nueva posición aleatoria dentro del área segura
+            let newX, newY;
             
-            // Calcular nueva posición aleatoria asegurando que esté dentro
-            const newLeft = Math.max(minLeft, Math.min(maxLeft, Math.random() * maxLeft));
-            const newTop = Math.max(minTop, Math.min(maxTop, Math.random() * maxTop));
+            if (maxX > minX && maxY > minY) {
+                newX = Math.max(minX, Math.min(maxX, Math.random() * maxX));
+                newY = Math.max(minY, Math.min(maxY, Math.random() * maxY));
+            } else {
+                // Si el área es muy pequeña, centrar el botón
+                newX = Math.max(0, (containerRect.width - btnNoRect.width) / 2);
+                newY = Math.max(0, (containerRect.height - btnNoRect.height) / 2);
+            }
             
+            // Aplicar nueva posición
             btnNo.style.position = 'absolute';
-            btnNo.style.left = newLeft + 'px';
-            btnNo.style.top = newTop + 'px';
-            
-            // Efecto de temblor
-            btnNo.style.transform = `rotate(${Math.random() * 20 - 10}deg) scale(${Math.max(0.5, 1 - hoverCount * 0.1)})`;
+            btnNo.style.left = newX + 'px';
+            btnNo.style.top = newY + 'px';
             
             // Crear efecto de partículas al huir
-            createFirework(event.clientX, event.clientY);
-            
-            // Resetear la animación
-            btnNo.style.animation = 'none';
-            setTimeout(() => {
-                btnNo.style.animation = 'noButtonEscape 0.3s forwards';
-            }, 10);
+            if (event && event.clientX && event.clientY) {
+                createFirework(event.clientX, event.clientY);
+            }
         }
         
         // Versión para touch en dispositivos móviles
@@ -562,9 +599,15 @@
             // Mover el botón inmediatamente
             huir(event);
             
-            // Mensaje divertido (solo si no ha pasado 5 veces)
+            // Mensaje divertido basado en el contador
             if (hoverCount < 5) {
-                alert("¡Oh no! El botón 'No' es tímido 😉 ¡Sigue intentando!");
+                setTimeout(() => alert("¡Oh no! El botón 'No' es tímido 😉"), 100);
+            } else if (hoverCount < 15) {
+                setTimeout(() => alert("¡El botón 'Sí' está creciendo! 🌱"), 100);
+            } else if (hoverCount < 20) {
+                setTimeout(() => alert("¡Cuidado! El botón 'Sí' se está enojando 😠"), 100);
+            } else {
+                setTimeout(() => alert("¡ALERTA! El botón 'Sí' está FURIOSO 🤬"), 100);
             }
             
             // Moverlo de nuevo inmediatamente
@@ -589,6 +632,10 @@
                     No puedo esperar para celebrar contigo.<br>
                     Te amo infinitamente 💕
                 </p>
+                <p style="font-size: 1.1em; color: #666; margin-top: 20px;">
+                    Intentos de escapar: ${hoverCount}<br>
+                    Tamaño final del botón Sí: ${siSize.toFixed(2)}x
+                </p>
                 <div style="margin-top: 40px;">
                     <button onclick="location.reload()" style="padding: 15px 40px; font-size: 1.3em; background: linear-gradient(45deg, #ff4081, #ff1744); color: white; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
                         ¡Ver de nuevo! 🔄
@@ -597,7 +644,7 @@
             `;
             
             // Mega lluvia de corazones
-            for (let i = 0; i < 200; i++) {
+            for (let i = 0; i < 150; i++) {
                 setTimeout(() => {
                     createFirework(
                         Math.random() * window.innerWidth,
@@ -608,16 +655,23 @@
             
             // Crear más decoraciones
             crearDecoraciones();
-            crearDecoraciones();
         }
         
-        // Inicializar decoraciones cuando carga la página
+        // Cerrar mensaje de rosa al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            const roseMessage = document.getElementById('roseMessage');
+            if (roseMessage.style.display === 'block' && !roseMessage.contains(e.target)) {
+                closeRoseMessage();
+            }
+        });
+        
+        // Inicializar cuando carga la página
         window.onload = function() {
             crearDecoraciones();
             
             // Agregar efecto de partículas al mover el mouse
             document.addEventListener('mousemove', (e) => {
-                if (Math.random() > 0.7) {
+                if (Math.random() > 0.8) {
                     const spark = document.createElement('div');
                     spark.className = 'sparkle';
                     spark.innerHTML = '💖';
@@ -632,6 +686,24 @@
                     }, 1000);
                 }
             });
+            
+            // Posicionar botones al inicio
+            setTimeout(() => {
+                const btnNo = document.getElementById('btnNo');
+                const botonesContainer = document.getElementById('botonesContainer');
+                
+                if (btnNo && botonesContainer) {
+                    const containerRect = botonesContainer.getBoundingClientRect();
+                    const btnNoRect = btnNo.getBoundingClientRect();
+                    
+                    const initialX = (containerRect.width - btnNoRect.width) * 0.7;
+                    const initialY = (containerRect.height - btnNoRect.height) / 2;
+                    
+                    btnNo.style.position = 'absolute';
+                    btnNo.style.left = initialX + 'px';
+                    btnNo.style.top = initialY + 'px';
+                }
+            }, 100);
         };
     </script>
 </body>

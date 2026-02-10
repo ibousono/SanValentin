@@ -86,6 +86,7 @@
             min-width: 150px;
             z-index: 2;
             position: relative;
+            transform-origin: center;
         }
         
         .btn-si:hover {
@@ -102,15 +103,16 @@
             border-radius: 50px;
             cursor: pointer;
             font-weight: bold;
-            position: relative;
+            position: fixed;
             transition: all 0.3s;
             box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
             min-width: 150px;
-            z-index: 3;
+            z-index: 100;
+            transform-origin: center;
         }
         
         .btn-no:hover {
-            transform: rotate(5deg);
+            transform: rotate(5deg) scale(1.05);
         }
         
         .hearts-container {
@@ -278,14 +280,15 @@
         }
         
         .angry-face {
-            position: absolute;
-            top: -40px;
+            position: fixed;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 2em;
+            font-size: 3em;
             opacity: 0;
             transition: opacity 0.5s;
-            z-index: 5;
+            z-index: 101;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
         }
         
         .rose-message {
@@ -293,15 +296,45 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.98);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
             z-index: 1000;
             text-align: center;
-            max-width: 300px;
+            max-width: 350px;
             animation: fadeIn 0.5s;
             display: none;
+            border: 3px solid #ff4081;
+        }
+        
+        .giant-si {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10em;
+            z-index: 99;
+            pointer-events: none;
+            opacity: 0.1;
+            animation: giantPulse 3s infinite;
+        }
+        
+        @keyframes giantPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.1; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.15; }
+        }
+        
+        .growth-counter {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 1.2em;
+            z-index: 50;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
     </style>
 </head>
@@ -315,11 +348,9 @@
         <p>¿Aceptarías ser mi San Valentín este año y todos los que vengan?</p>
         
         <div class="botones" id="botonesContainer">
-            <div class="angry-face" id="angryFace"></div>
             <button class="btn-si" onclick="aceptar()" id="btnSi">
                 <span class="si-emoticons" id="siEmoticons">¡SÍ! 💖</span>
             </button>
-            <button class="btn-no" id="btnNo" onmouseover="huir(event)" ontouchstart="huirTouch(event)" onclick="huirRapido(event)">No 😢</button>
         </div>
         
         <div class="message" id="message">
@@ -329,10 +360,15 @@
         </div>
     </div>
     
+    <button class="btn-no" id="btnNo">No 😢</button>
+    <div class="angry-face" id="angryFace"></div>
+    <div class="giant-si" id="giantSi"></div>
+    <div class="growth-counter" id="growthCounter">Tamaño: 1.00x</div>
+    
     <div class="rose-message" id="roseMessage">
         <h3>💌 Mensaje secreto 💌</h3>
         <p id="roseMessageText"></p>
-        <button onclick="closeRoseMessage()" style="margin-top: 15px; padding: 8px 20px; background: #ff4081; color: white; border: none; border-radius: 20px; cursor: pointer;">Cerrar</button>
+        <button onclick="closeRoseMessage()" style="margin-top: 15px; padding: 10px 25px; background: linear-gradient(45deg, #ff4081, #ff1744); color: white; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">Cerrar</button>
     </div>
 
     <script>
@@ -351,6 +387,25 @@
             "Eres mi rosa favorita en el jardín de la vida 🥀",
             "Ninguna rosa es tan hermosa como tu sonrisa 💕"
         ];
+        
+        // Inicializar el botón No en posición aleatoria
+        function initializeNoButton() {
+            const btnNo = document.getElementById('btnNo');
+            const viewportHeight = window.innerHeight;
+            
+            // Posición aleatoria pero que no esté muy abajo (máximo 80% de la altura)
+            const maxTop = viewportHeight * 0.8;
+            const randomTop = Math.random() * maxTop;
+            const randomLeft = Math.random() * (window.innerWidth - 150);
+            
+            btnNo.style.left = randomLeft + 'px';
+            btnNo.style.top = randomTop + 'px';
+            
+            // Agregar eventos
+            btnNo.addEventListener('mouseover', huir);
+            btnNo.addEventListener('touchstart', huirTouch);
+            btnNo.addEventListener('click', huirRapido);
+        }
         
         // Crear corazones, rosas y decoraciones
         function crearDecoraciones() {
@@ -498,42 +553,51 @@
             }
         }
         
-        // Función para cuando pasa el mouse sobre "No" - CORREGIDA
+        // Función para cuando pasa el mouse sobre "No" - MEJORADA
         function huir(event) {
             const btnNo = document.getElementById('btnNo');
-            const botonesContainer = document.getElementById('botonesContainer');
             const btnSi = document.getElementById('btnSi');
             const siEmoticons = document.getElementById('siEmoticons');
             const angryFace = document.getElementById('angryFace');
+            const giantSi = document.getElementById('giantSi');
+            const growthCounter = document.getElementById('growthCounter');
             
             // Incrementar contador
             hoverCount++;
             
-            // Después de 5 veces, hacer crecer el botón Sí y cambiar emoticones
-            if (hoverCount >= 5) {
-                // Hacer crecer el botón Sí (hasta máximo 2x)
-                siSize = Math.min(2, 1 + (hoverCount - 4) * 0.08);
-                btnSi.style.transform = `scale(${siSize})`;
-                
-                // Cambiar emoticón del botón Sí cada 2 veces
-                if (hoverCount % 2 === 0) {
-                    currentEmoticonIndex = (currentEmoticonIndex + 1) % emoticons.length;
-                    siEmoticons.innerHTML = `¡SÍ! ${emoticons[currentEmoticonIndex]}`;
-                }
-                
-                // Efecto especial en el botón Sí
-                btnSi.style.boxShadow = `0 0 ${10 + hoverCount}px rgba(76, 175, 80, 0.7)`;
-                
-                // Hacer que el botón No sea más pequeño (mínimo 0.4x)
-                const noScale = Math.max(0.4, 1 - (hoverCount - 4) * 0.05);
-                btnNo.style.transform = `scale(${noScale}) rotate(${Math.random() * 20 - 10}deg)`;
+            // Hacer crecer el botón Sí INDEFINIDAMENTE (0.1x por cada vez)
+            siSize += 0.1;
+            btnSi.style.transform = `scale(${siSize})`;
+            
+            // Actualizar contador de crecimiento
+            growthCounter.textContent = `Tamaño: ${siSize.toFixed(2)}x`;
+            
+            // Cambiar emoticón del botón Sí cada 3 veces
+            if (hoverCount % 3 === 0) {
+                currentEmoticonIndex = (currentEmoticonIndex + 1) % emoticons.length;
+                siEmoticons.innerHTML = `¡SÍ! ${emoticons[currentEmoticonIndex]}`;
             }
+            
+            // Efecto especial en el botón Sí
+            btnSi.style.boxShadow = `0 0 ${10 + hoverCount}px rgba(76, 175, 80, 0.7)`;
+            
+            // Mostrar SÍ gigante en el fondo cuando sea muy grande
+            if (siSize > 3) {
+                giantSi.style.display = 'block';
+                giantSi.style.opacity = Math.min(0.3, (siSize - 3) * 0.1);
+                giantSi.textContent = '¡SÍ! ' + emoticons[currentEmoticonIndex];
+            }
+            
+            // Hacer que el botón No sea más pequeño (mínimo 0.3x)
+            const noScale = Math.max(0.3, 1 - hoverCount * 0.02);
+            btnNo.style.transform = `scale(${noScale})`;
             
             // Mostrar cara enojada después de 15 veces
             if (hoverCount >= 15 && hoverCount < 20) {
                 angryFace.textContent = "😠";
                 angryFace.style.opacity = "1";
                 angryFace.style.color = "#ff9800";
+                angryFace.style.top = "10px";
                 angryFaceVisible = true;
             }
             
@@ -542,42 +606,46 @@
                 angryFace.textContent = "🤬";
                 angryFace.style.opacity = "1";
                 angryFace.style.color = "#f44336";
-                angryFace.style.textShadow = "0 0 10px red";
+                angryFace.style.textShadow = "0 0 20px red";
+                angryFace.style.top = "10px";
                 angryFaceVisible = true;
             }
             
-            // Obtener dimensiones del contenedor de botones
-            const containerRect = botonesContainer.getBoundingClientRect();
-            const btnNoRect = btnNo.getBoundingClientRect();
+            // Calcular nueva posición para el botón No en TODA LA PANTALLA
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const btnNoWidth = btnNo.offsetWidth;
+            const btnNoHeight = btnNo.offsetHeight;
             
-            // Área restringida donde puede moverse el botón No (80% del contenedor)
-            const safeAreaPadding = 20;
-            const minX = safeAreaPadding;
-            const maxX = containerRect.width - btnNoRect.width - safeAreaPadding;
-            const minY = safeAreaPadding;
-            const maxY = containerRect.height - btnNoRect.height - safeAreaPadding;
+            // Límites: no puede ir muy abajo (máximo 85% de la altura)
+            const maxTop = viewportHeight * 0.85 - btnNoHeight;
+            const minTop = 10; // Mínimo 10px desde arriba
             
-            // Calcular nueva posición aleatoria dentro del área segura
-            let newX, newY;
+            // Calcular nueva posición aleatoria
+            let newTop, newLeft;
             
-            if (maxX > minX && maxY > minY) {
-                newX = Math.max(minX, Math.min(maxX, Math.random() * maxX));
-                newY = Math.max(minY, Math.min(maxY, Math.random() * maxY));
-            } else {
-                // Si el área es muy pequeña, centrar el botón
-                newX = Math.max(0, (containerRect.width - btnNoRect.width) / 2);
-                newY = Math.max(0, (containerRect.height - btnNoRect.height) / 2);
-            }
+            // Intentar encontrar una posición que no esté muy cerca del botón Sí
+            let attempts = 0;
+            do {
+                newTop = Math.max(minTop, Math.min(maxTop, Math.random() * maxTop));
+                newLeft = Math.max(10, Math.min(viewportWidth - btnNoWidth - 10, Math.random() * (viewportWidth - btnNoWidth)));
+                attempts++;
+            } while (attempts < 10); // Máximo 10 intentos
             
             // Aplicar nueva posición
-            btnNo.style.position = 'absolute';
-            btnNo.style.left = newX + 'px';
-            btnNo.style.top = newY + 'px';
+            btnNo.style.left = newLeft + 'px';
+            btnNo.style.top = newTop + 'px';
             
             // Crear efecto de partículas al huir
             if (event && event.clientX && event.clientY) {
                 createFirework(event.clientX, event.clientY);
             }
+            
+            // Efecto de temblor en el botón No
+            btnNo.style.animation = 'none';
+            setTimeout(() => {
+                btnNo.style.transform = `scale(${noScale}) rotate(${Math.random() * 20 - 10}deg)`;
+            }, 10);
         }
         
         // Versión para touch en dispositivos móviles
@@ -600,15 +668,23 @@
             huir(event);
             
             // Mensaje divertido basado en el contador
+            let message = "";
             if (hoverCount < 5) {
-                setTimeout(() => alert("¡Oh no! El botón 'No' es tímido 😉"), 100);
+                message = "¡Oh no! El botón 'No' es tímido 😉";
             } else if (hoverCount < 15) {
-                setTimeout(() => alert("¡El botón 'Sí' está creciendo! 🌱"), 100);
+                message = "¡El botón 'Sí' está creciendo! 🌱";
             } else if (hoverCount < 20) {
-                setTimeout(() => alert("¡Cuidado! El botón 'Sí' se está enojando 😠"), 100);
+                message = "¡Cuidado! El botón 'Sí' se está enojando 😠";
             } else {
-                setTimeout(() => alert("¡ALERTA! El botón 'Sí' está FURIOSO 🤬"), 100);
+                message = "¡ALERTA! El botón 'Sí' está FURIOSO 🤬";
             }
+            
+            // Mostrar alerta después de un breve retraso
+            setTimeout(() => {
+                if (hoverCount < 30) { // Solo mostrar alertas hasta 30 veces
+                    alert(message + `\n\nTamaño actual: ${siSize.toFixed(2)}x`);
+                }
+            }, 100);
             
             // Moverlo de nuevo inmediatamente
             setTimeout(() => {
@@ -634,7 +710,8 @@
                 </p>
                 <p style="font-size: 1.1em; color: #666; margin-top: 20px;">
                     Intentos de escapar: ${hoverCount}<br>
-                    Tamaño final del botón Sí: ${siSize.toFixed(2)}x
+                    Tamaño final del botón Sí: ${siSize.toFixed(2)}x<br>
+                    ¡Creció ${(siSize - 1).toFixed(2)} veces más!
                 </p>
                 <div style="margin-top: 40px;">
                     <button onclick="location.reload()" style="padding: 15px 40px; font-size: 1.3em; background: linear-gradient(45deg, #ff4081, #ff1744); color: white; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
@@ -643,14 +720,20 @@
                 </div>
             `;
             
+            // Esconder elementos
+            document.getElementById('btnNo').style.display = 'none';
+            document.getElementById('angryFace').style.display = 'none';
+            document.getElementById('giantSi').style.display = 'none';
+            document.getElementById('growthCounter').style.display = 'none';
+            
             // Mega lluvia de corazones
-            for (let i = 0; i < 150; i++) {
+            for (let i = 0; i < 200; i++) {
                 setTimeout(() => {
                     createFirework(
                         Math.random() * window.innerWidth,
                         Math.random() * window.innerHeight
                     );
-                }, i * 20);
+                }, i * 15);
             }
             
             // Crear más decoraciones
@@ -668,6 +751,15 @@
         // Inicializar cuando carga la página
         window.onload = function() {
             crearDecoraciones();
+            initializeNoButton();
+            
+            // Asegurar que el botón No tenga posición inicial
+            setTimeout(() => {
+                const btnNo = document.getElementById('btnNo');
+                if (parseInt(btnNo.style.top) === 0) {
+                    initializeNoButton();
+                }
+            }, 500);
             
             // Agregar efecto de partículas al mover el mouse
             document.addEventListener('mousemove', (e) => {
@@ -687,23 +779,23 @@
                 }
             });
             
-            // Posicionar botones al inicio
-            setTimeout(() => {
+            // Redimensionar botón No cuando cambie el tamaño de la ventana
+            window.addEventListener('resize', function() {
                 const btnNo = document.getElementById('btnNo');
-                const botonesContainer = document.getElementById('botonesContainer');
+                const currentLeft = parseInt(btnNo.style.left) || 0;
+                const currentTop = parseInt(btnNo.style.top) || 0;
                 
-                if (btnNo && botonesContainer) {
-                    const containerRect = botonesContainer.getBoundingClientRect();
-                    const btnNoRect = btnNo.getBoundingClientRect();
-                    
-                    const initialX = (containerRect.width - btnNoRect.width) * 0.7;
-                    const initialY = (containerRect.height - btnNoRect.height) / 2;
-                    
-                    btnNo.style.position = 'absolute';
-                    btnNo.style.left = initialX + 'px';
-                    btnNo.style.top = initialY + 'px';
+                // Asegurar que el botón no se salga de la pantalla
+                const maxLeft = window.innerWidth - btnNo.offsetWidth - 10;
+                const maxTop = window.innerHeight * 0.85 - btnNo.offsetHeight;
+                
+                if (currentLeft > maxLeft) {
+                    btnNo.style.left = Math.max(10, maxLeft) + 'px';
                 }
-            }, 100);
+                if (currentTop > maxTop) {
+                    btnNo.style.top = Math.max(10, maxTop) + 'px';
+                }
+            });
         };
     </script>
 </body>

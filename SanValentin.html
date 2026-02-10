@@ -66,6 +66,7 @@
             gap: 20px;
             margin-top: 30px;
             position: relative;
+            min-height: 80px;
         }
         
         .btn-si {
@@ -76,9 +77,10 @@
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             font-weight: bold;
             box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            min-width: 150px;
         }
         
         .btn-si:hover {
@@ -96,30 +98,20 @@
             cursor: pointer;
             font-weight: bold;
             position: relative;
-            transition: all 0.2s;
+            transition: all 0.3s;
             box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+            min-width: 150px;
+            animation: noButtonEscape 0.3s forwards;
+        }
+        
+        @keyframes noButtonEscape {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.95); }
+            100% { transform: scale(1); }
         }
         
         .btn-no:hover {
             transform: rotate(5deg);
-        }
-        
-        .counter {
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            background: #ff4081;
-            color: white;
-            border-radius: 50%;
-            width: 25px;
-            height: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.8em;
-            opacity: 0;
-            transition: opacity 0.3s;
         }
         
         .hearts-container {
@@ -273,6 +265,11 @@
             transform: rotate(-45deg);
             user-select: none;
         }
+        
+        .si-emoticons {
+            display: inline-block;
+            transition: all 0.3s;
+        }
     </style>
 </head>
 <body>
@@ -285,9 +282,10 @@
         <p>¿Aceptarías ser mi San Valentín este año y todos los que vengan?</p>
         
         <div class="botones">
-            <div class="counter" id="hoverCounter">0</div>
-            <button class="btn-si" onclick="aceptar()">¡SÍ! 💖</button>
-            <button class="btn-no" id="btnNo" onmouseover="huir()" onclick="huirRapido()">No 😢</button>
+            <button class="btn-si" onclick="aceptar()" id="btnSi">
+                <span class="si-emoticons" id="siEmoticons">¡SÍ! 💖</span>
+            </button>
+            <button class="btn-no" id="btnNo" onmouseover="huir(event)" ontouchstart="huirTouch(event)" onclick="huirRapido(event)">No 😢</button>
         </div>
         
         <div class="message" id="message">
@@ -299,7 +297,9 @@
 
     <script>
         let hoverCount = 0;
-        let secretMode = false;
+        let siSize = 1;
+        const emoticons = ["💖", "💕", "💘", "💝", "💗", "💓", "💞"];
+        let currentEmoticonIndex = 0;
         
         // Crear corazones, rosas y decoraciones
         function crearDecoraciones() {
@@ -308,7 +308,7 @@
             const total = 50;
             
             // Crear texto de amor en el fondo
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 15; i++) {
                 const loveText = document.createElement('div');
                 loveText.className = 'love-text';
                 loveText.innerHTML = 'TE AMO';
@@ -482,95 +482,101 @@
         }
         
         // Función para cuando pasa el mouse sobre "No"
-        function huir() {
+        function huir(event) {
             const btnNo = document.getElementById('btnNo');
             const container = document.querySelector('.container');
-            const counter = document.getElementById('hoverCounter');
+            const btnSi = document.getElementById('btnSi');
+            const siEmoticons = document.getElementById('siEmoticons');
             
-            // Incrementar contador
+            // Incrementar contador internamente (sin mostrarlo)
             hoverCount++;
-            counter.textContent = hoverCount;
-            counter.style.opacity = '1';
             
-            // Si pasa 5 veces, activar modo secreto
-            if (hoverCount === 5) {
-                activateSecretMode();
+            // Después de 5 veces, hacer crecer el botón Sí y cambiar emoticones
+            if (hoverCount >= 5) {
+                // Hacer crecer el botón Sí
+                siSize += 0.15;
+                btnSi.style.transform = `scale(${siSize})`;
+                
+                // Cambiar emoticón del botón Sí
+                currentEmoticonIndex = (currentEmoticonIndex + 1) % emoticons.length;
+                siEmoticons.innerHTML = `¡SÍ! ${emoticons[currentEmoticonIndex]}`;
+                
+                // Efecto especial en el botón Sí
+                btnSi.style.boxShadow = `0 0 30px rgba(76, 175, 80, 0.7)`;
+                
+                // Hacer que el botón No sea más pequeño
+                btnNo.style.transform = `scale(${Math.max(0.5, 1 - hoverCount * 0.1)})`;
             }
             
-            // Obtener dimensiones
+            // Asegurarnos de que el botón No esté dentro de los límites
             const containerRect = container.getBoundingClientRect();
-            const btnWidth = btnNo.offsetWidth;
-            const btnHeight = btnNo.offsetHeight;
+            const btnNoRect = btnNo.getBoundingClientRect();
             
-            // Calcular nueva posición
-            const maxX = containerRect.width - btnWidth - 20;
-            const maxY = containerRect.height - btnHeight - 20;
+            // Posiciones límite
+            const minLeft = 0;
+            const maxLeft = containerRect.width - btnNoRect.width;
+            const minTop = 0;
+            const maxTop = containerRect.height - btnNoRect.height;
             
-            const newX = Math.random() * maxX;
-            const newY = Math.random() * maxY;
+            // Obtener posición actual
+            let currentLeft = parseInt(btnNo.style.left) || 0;
+            let currentTop = parseInt(btnNo.style.top) || 0;
+            
+            // Calcular nueva posición aleatoria asegurando que esté dentro
+            const newLeft = Math.max(minLeft, Math.min(maxLeft, Math.random() * maxLeft));
+            const newTop = Math.max(minTop, Math.min(maxTop, Math.random() * maxTop));
             
             btnNo.style.position = 'absolute';
-            btnNo.style.left = newX + 'px';
-            btnNo.style.top = newY + 'px';
+            btnNo.style.left = newLeft + 'px';
+            btnNo.style.top = newTop + 'px';
             
             // Efecto de temblor
-            btnNo.style.transform = `rotate(${Math.random() * 20 - 10}deg) scale(${1 + hoverCount * 0.05})`;
-            
-            // Cambiar color gradualmente
-            const redValue = Math.min(255, 244 + hoverCount * 10);
-            btnNo.style.background = `linear-gradient(45deg, rgb(${redValue}, 67, 54), #d32f2f)`;
+            btnNo.style.transform = `rotate(${Math.random() * 20 - 10}deg) scale(${Math.max(0.5, 1 - hoverCount * 0.1)})`;
             
             // Crear efecto de partículas al huir
             createFirework(event.clientX, event.clientY);
+            
+            // Resetear la animación
+            btnNo.style.animation = 'none';
+            setTimeout(() => {
+                btnNo.style.animation = 'noButtonEscape 0.3s forwards';
+            }, 10);
         }
         
-        // Activar modo secreto después de 5 intentos
-        function activateSecretMode() {
-            secretMode = true;
-            const btnNo = document.getElementById('btnNo');
-            
-            // Cambiar el texto del botón
-            btnNo.textContent = "¡Okay! 😊";
-            btnNo.style.background = "linear-gradient(45deg, #4CAF50, #45a049)";
-            btnNo.style.transform = "scale(1.2)";
-            btnNo.style.boxShadow = "0 0 20px rgba(76, 175, 80, 0.7)";
-            
-            // Hacer que el botón deje de huir
-            btnNo.onmouseover = null;
-            btnNo.onclick = function() {
-                aceptar();
+        // Versión para touch en dispositivos móviles
+        function huirTouch(event) {
+            event.preventDefault();
+            const touch = event.touches[0];
+            const fakeEvent = {
+                clientX: touch.clientX,
+                clientY: touch.clientY
             };
-            
-            // Mostrar mensaje especial
-            const specialMessage = document.createElement('div');
-            specialMessage.className = 'message';
-            specialMessage.style.display = 'block';
-            specialMessage.innerHTML = `
-                <h2>¡Persistencia premiada! 🏆</h2>
-                <p>Después de 5 intentos, el botón "No" se rindió y se convirtió en "Sí" 😄</p>
-                <p>¡Ahora tienes que aceptar! 💝</p>
-            `;
-            
-            document.querySelector('.botones').after(specialMessage);
-            
-            // Lluvia de corazones especial
-            for (let i = 0; i < 100; i++) {
-                setTimeout(() => {
-                    createFirework(
-                        Math.random() * window.innerWidth,
-                        Math.random() * window.innerHeight
-                    );
-                }, i * 50);
-            }
+            huir(fakeEvent);
         }
         
         // Función para cuando intenta hacer clic en "No"
-        function huirRapido() {
-            if (!secretMode) {
-                huir();
+        function huirRapido(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Mover el botón inmediatamente
+            huir(event);
+            
+            // Mensaje divertido (solo si no ha pasado 5 veces)
+            if (hoverCount < 5) {
                 alert("¡Oh no! El botón 'No' es tímido 😉 ¡Sigue intentando!");
-                setTimeout(huir, 100);
             }
+            
+            // Moverlo de nuevo inmediatamente
+            setTimeout(() => {
+                if (event.type === 'touchstart') {
+                    huirTouch(event);
+                } else {
+                    huir(event);
+                }
+            }, 50);
+            
+            return false;
         }
         
         // Función cuando dice que Sí

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para mi amor ♥</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #ffb6c1, #ff69b4, #db7093);
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .container {
+            text-align: center;
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            z-index: 10;
+            position: relative;
+        }
+        
+        h1 {
+            color: #d32f2f;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        p {
+            color: #555;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        
+        .botones {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .btn-si {
+            padding: 15px 40px;
+            font-size: 1.5em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            font-weight: bold;
+        }
+        
+        .btn-si:hover {
+            transform: scale(1.1);
+            background-color: #45a049;
+        }
+        
+        .btn-no {
+            padding: 15px 40px;
+            font-size: 1.5em;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            position: relative;
+        }
+        
+        .hearts-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .heart {
+            position: absolute;
+            color: #ff4081;
+            font-size: 24px;
+            opacity: 0.7;
+            animation: float 5s infinite linear;
+        }
+        
+        .rose {
+            position: absolute;
+            font-size: 30px;
+            color: #ff1744;
+            opacity: 0.6;
+            z-index: 1;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            90% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .message {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .message h2 {
+            color: #d32f2f;
+            margin-bottom: 15px;
+        }
+        
+        .message p {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="hearts-container" id="hearts"></div>
+    
+    <div class="container" id="mainContainer">
+        <h1>💝 ¡Hola mi amor! 💝</h1>
+        <p>El Día de San Valentín se acerca y hay una pregunta muy importante que hacerte...</p>
+        <p>¿Aceptarías ser mi San Valentín este año y todos los que vengan?</p>
+        
+        <div class="botones">
+            <button class="btn-si" onclick="aceptar()">¡SÍ! 💖</button>
+            <button class="btn-no" id="btnNo" onmouseover="huir()" onclick="huirRapido()">No 😢</button>
+        </div>
+        
+        <div class="message" id="message">
+            <h2>¡Sabía que dirías que sí! 💘</h2>
+            <p>Eres la persona más especial de mi vida y no puedo esperar para pasar este día contigo.</p>
+            <p>Te amo más de lo que las palabras pueden expresar. 💕</p>
+        </div>
+    </div>
+
+    <script>
+        // Crear corazones y rosas flotantes
+        function crearDecoraciones() {
+            const heartsContainer = document.getElementById('hearts');
+            const total = 50;
+            
+            for (let i = 0; i < total; i++) {
+                // Crear corazones
+                const heart = document.createElement('div');
+                heart.className = 'heart';
+                heart.innerHTML = '♥';
+                heart.style.left = Math.random() * 100 + 'vw';
+                heart.style.animationDelay = Math.random() * 5 + 's';
+                heart.style.fontSize = (Math.random() * 20 + 15) + 'px';
+                heartsContainer.appendChild(heart);
+                
+                // Crear algunas rosas
+                if (i % 5 === 0) {
+                    const rose = document.createElement('div');
+                    rose.className = 'rose';
+                    rose.innerHTML = '🌹';
+                    rose.style.left = Math.random() * 100 + 'vw';
+                    rose.style.animationDelay = Math.random() * 5 + 's';
+                    heartsContainer.appendChild(rose);
+                }
+            }
+        }
+        
+        // Función para cuando pasa el mouse sobre "No"
+        function huir() {
+            const btnNo = document.getElementById('btnNo');
+            const container = document.querySelector('.container');
+            
+            // Obtener dimensiones del contenedor
+            const containerRect = container.getBoundingClientRect();
+            const btnWidth = btnNo.offsetWidth;
+            const btnHeight = btnNo.offsetHeight;
+            
+            // Calcular posición aleatoria dentro del contenedor
+            const maxX = containerRect.width - btnWidth - 20;
+            const maxY = containerRect.height - btnHeight - 20;
+            
+            const newX = Math.random() * maxX;
+            const newY = Math.random() * maxY;
+            
+            btnNo.style.position = 'absolute';
+            btnNo.style.left = newX + 'px';
+            btnNo.style.top = newY + 'px';
+            
+            // Agregar efecto de temblor
+            btnNo.style.transform = 'rotate(' + (Math.random() * 10 - 5) + 'deg)';
+        }
+        
+        // Función para cuando intenta hacer clic en "No"
+        function huirRapido() {
+            huir();
+            
+            // Mensaje divertido
+            alert("¡Oh no! Creo que el botón 'No' está un poco asustado 😉");
+            
+            // Moverlo de nuevo inmediatamente
+            setTimeout(huir, 100);
+        }
+        
+        // Función cuando dice que Sí
+        function aceptar() {
+            document.getElementById('mainContainer').innerHTML = `
+                <h1>¡FELIZ SAN VALENTÍN! 💖</h1>
+                <div style="font-size: 80px; margin: 20px 0;">🥰💐🎉</div>
+                <p style="font-size: 1.3em; color: #d32f2f;">
+                    ¡Eres la mejor novia del mundo!<br>
+                    No puedo esperar para celebrar contigo.<br>
+                    Te amo infinitamente 💕
+                </p>
+                <div style="margin-top: 30px;">
+                    <button onclick="location.reload()" style="padding: 10px 30px; font-size: 1.2em; background-color: #4CAF50; color: white; border: none; border-radius: 20px; cursor: pointer;">
+                        Ver de nuevo
+                    </button>
+                </div>
+            `;
+            
+            // Añadir más corazones
+            crearDecoraciones();
+            crearDecoraciones();
+        }
+        
+        // Inicializar decoraciones cuando carga la página
+        window.onload = crearDecoraciones;
+    </script>
+</body>
+</html>

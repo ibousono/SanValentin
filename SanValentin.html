@@ -78,6 +78,7 @@
             justify-content: space-between;
             width: 100%;
             gap: 20px;
+            position: relative;
         }
         
         .btn-si {
@@ -92,7 +93,6 @@
             font-weight: bold;
             box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
             min-width: 150px;
-            width: 48%;
             flex: 1;
             transform-origin: center;
             z-index: 2;
@@ -116,7 +116,6 @@
             transition: all 0.3s;
             box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
             min-width: 150px;
-            width: 48%;
             flex: 1;
             transform-origin: center;
             z-index: 3;
@@ -129,6 +128,7 @@
         .btn-no.escapando {
             position: fixed !important;
             z-index: 1000 !important;
+            transition: all 0.2s ease !important;
         }
         
         .hearts-container {
@@ -391,11 +391,10 @@
         let siSize = 1;
         let angryFaceVisible = false;
         let noIsEscaping = false;
-        let noOriginalPosition = null;
         const emoticons = ["💖", "💕", "💘", "💝", "💗", "💓", "💞"];
         let currentEmoticonIndex = 0;
         const roseMessages = [
-            "Cada rosa representa un día que he pensado en ti y shu culo enorme🌹",
+            "Cada rosa representa un día que he pensado en ti y en tu culo enorme 🌹",
             "Eres la flor más bella de mi vida 💐",
             "Mi amor por ti florece cada día más 🌷",
             "Como esta rosa, mi amor por ti nunca se marchita 🌺",
@@ -405,17 +404,26 @@
             "Ninguna rosa es tan hermosa como tu sonrisa 💕"
         ];
         
-        // Guardar la posición original del botón No
-        function saveOriginalPosition() {
+        // Forzar que el botón No esté en su posición inicial
+        function resetNoButtonPosition() {
             const btnNo = document.getElementById('btnNo');
-            const rect = btnNo.getBoundingClientRect();
+            const botonesInicial = document.querySelector('.botones-inicial');
             
-            noOriginalPosition = {
-                left: rect.left,
-                top: rect.top,
-                width: rect.width,
-                height: rect.height
-            };
+            // Asegurar que está en el contenedor correcto
+            if (!botonesInicial.contains(btnNo)) {
+                botonesInicial.appendChild(btnNo);
+            }
+            
+            // Restaurar todos los estilos
+            btnNo.style.position = 'relative';
+            btnNo.style.left = 'auto';
+            btnNo.style.top = 'auto';
+            btnNo.style.width = '';
+            btnNo.style.transform = 'scale(1) rotate(0deg)';
+            btnNo.style.zIndex = '3';
+            btnNo.classList.remove('escapando');
+            
+            noIsEscaping = false;
         }
         
         // Regresar el botón No a su posición original
@@ -425,25 +433,28 @@
             
             // Remover clase de escape
             btnNo.classList.remove('escapando');
-            btnNo.classList.add('no-posicion-inicial');
             
             // Volver al contenedor original
             if (!botonesInicial.contains(btnNo)) {
-                const btnSi = document.getElementById('btnSi');
                 botonesInicial.appendChild(btnNo);
-                
-                // Restaurar estilos
-                setTimeout(() => {
-                    btnNo.style.position = 'relative';
-                    btnNo.style.left = 'auto';
-                    btnNo.style.top = 'auto';
-                    btnNo.style.width = '48%';
-                    btnNo.style.transform = 'scale(1) rotate(0deg)';
-                    btnNo.style.zIndex = '3';
-                }, 10);
             }
             
+            // Restaurar estilos gradualmente para animación suave
+            btnNo.style.transition = 'all 0.5s ease';
+            btnNo.style.position = 'relative';
+            btnNo.style.left = 'auto';
+            btnNo.style.top = 'auto';
+            btnNo.style.width = '';
+            btnNo.style.transform = 'scale(1) rotate(0deg)';
+            btnNo.style.zIndex = '3';
+            
+            // Quitar la bandera de escape
             noIsEscaping = false;
+            
+            // Restaurar transición normal después
+            setTimeout(() => {
+                btnNo.style.transition = 'all 0.3s';
+            }, 500);
         }
         
         // Crear corazones, rosas y decoraciones
@@ -601,12 +612,16 @@
             const giantSi = document.getElementById('giantSi');
             const growthCounter = document.getElementById('growthCounter');
             
-            // Solo iniciar escape si no está escapando ya
+            // Prevenir comportamiento por defecto
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Si el botón ya está escapando, solo moverlo a nueva posición
             if (!noIsEscaping) {
                 noIsEscaping = true;
                 btnNo.classList.add('escapando');
                 
-                // Remover del contenedor inicial
+                // Remover del contenedor inicial si es necesario
                 const botonesInicial = document.querySelector('.botones-inicial');
                 if (botonesInicial.contains(btnNo)) {
                     document.body.appendChild(btnNo);
@@ -649,14 +664,17 @@
             const btnNoHeight = btnNo.offsetHeight;
             
             // Límites: no puede ir muy abajo (máximo 85% de la altura)
-            const maxTop = viewportHeight * 0.85 - btnNoHeight;
+            const maxTop = Math.max(10, viewportHeight * 0.85 - btnNoHeight);
             const minTop = 10;
+            const maxLeft = viewportWidth - btnNoWidth - 10;
+            const minLeft = 10;
             
             // Calcular nueva posición aleatoria
-            const newTop = Math.max(minTop, Math.min(maxTop, Math.random() * maxTop));
-            const newLeft = Math.max(10, Math.min(viewportWidth - btnNoWidth - 10, Math.random() * (viewportWidth - btnNoWidth)));
+            const newTop = Math.floor(Math.random() * (maxTop - minTop + 1)) + minTop;
+            const newLeft = Math.floor(Math.random() * (maxLeft - minLeft + 1)) + minLeft;
             
-            // Aplicar nueva posición
+            // Aplicar nueva posición con animación
+            btnNo.style.transition = 'all 0.2s ease';
             btnNo.style.position = 'fixed';
             btnNo.style.left = newLeft + 'px';
             btnNo.style.top = newTop + 'px';
@@ -674,7 +692,6 @@
                 angryFace.textContent = "😠";
                 angryFace.style.opacity = "1";
                 angryFace.style.color = "#ff9800";
-                angryFace.style.top = "10px";
                 angryFaceVisible = true;
             }
             
@@ -684,7 +701,6 @@
                 angryFace.style.opacity = "1";
                 angryFace.style.color = "#f44336";
                 angryFace.style.textShadow = "0 0 20px red";
-                angryFace.style.top = "10px";
                 angryFaceVisible = true;
             }
             
@@ -697,11 +713,15 @@
         function huirTouch(event) {
             event.preventDefault();
             const touch = event.touches[0];
-            const fakeEvent = {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            };
-            huir(fakeEvent);
+            if (touch) {
+                const fakeEvent = {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    preventDefault: () => {},
+                    stopPropagation: () => {}
+                };
+                huir(fakeEvent);
+            }
         }
         
         // Función para cuando intenta hacer clic en "No"
@@ -712,7 +732,7 @@
             // Mover el botón inmediatamente
             huir(event);
             
-            // Cancelar el regreso automático
+            // Cancelar el regreso automático anterior
             clearTimeout(window.returnTimeout);
             
             // Mostrar alerta después de un breve retraso
@@ -779,12 +799,17 @@
         // Inicializar cuando carga la página
         window.onload = function() {
             crearDecoraciones();
-            saveOriginalPosition();
             
             // Configurar eventos del botón No
             const btnNo = document.getElementById('btnNo');
+            
+            // Remover eventos anteriores y agregar nuevos
+            btnNo.removeEventListener('mouseover', huir);
+            btnNo.removeEventListener('touchstart', huirTouch);
+            btnNo.removeEventListener('click', huirRapido);
+            
             btnNo.addEventListener('mouseover', huir);
-            btnNo.addEventListener('touchstart', huirTouch);
+            btnNo.addEventListener('touchstart', huirTouch, { passive: false });
             btnNo.addEventListener('click', huirRapido);
             
             // Agregar efecto de partículas al mover el mouse
@@ -805,34 +830,6 @@
                 }
             });
             
-            // Redimensionar y regresar a posición original cuando cambie el tamaño de la ventana
-            window.addEventListener('resize', function() {
-                if (noIsEscaping) {
-                    const btnNo = document.getElementById('btnNo');
-                    const currentLeft = parseInt(btnNo.style.left) || 0;
-                    const currentTop = parseInt(btnNo.style.top) || 0;
-                    
-                    const maxLeft = window.innerWidth - btnNo.offsetWidth - 10;
-                    const maxTop = window.innerHeight * 0.85 - btnNo.offsetHeight;
-                    
-                    if (currentLeft > maxLeft) {
-                        btnNo.style.left = Math.max(10, maxLeft) + 'px';
-                    }
-                    if (currentTop > maxTop) {
-                        btnNo.style.top = Math.max(10, maxTop) + 'px';
-                    }
-                } else {
-                    returnToOriginalPosition();
-                }
-            });
-            
-            // Regresar a posición original si el mouse sale de la pantalla
-            document.addEventListener('mouseleave', function() {
-                if (noIsEscaping) {
-                    setTimeout(returnToOriginalPosition, 1000);
-                }
-            });
-            
             // Asegurar que los botones sean del mismo tamaño al inicio
             setTimeout(() => {
                 const btnSi = document.getElementById('btnSi');
@@ -843,6 +840,18 @@
                 btnSi.style.width = maxWidth + 'px';
                 btnNo.style.width = maxWidth + 'px';
             }, 100);
+            
+            // Verificar cada segundo que el botón No tenga eventos funcionando
+            setInterval(() => {
+                const btnNo = document.getElementById('btnNo');
+                if (btnNo && !noIsEscaping) {
+                    // Asegurar que está en posición correcta
+                    const botonesInicial = document.querySelector('.botones-inicial');
+                    if (!botonesInicial.contains(btnNo)) {
+                        resetNoButtonPosition();
+                    }
+                }
+            }, 1000);
         };
     </script>
 </body>
